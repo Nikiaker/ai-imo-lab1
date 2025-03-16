@@ -19,6 +19,7 @@
         python3
 
         python3Packages.numpy_1
+        python3Packages.matplotlib
         (pythonCustom.withPackages(p: [ p.tsplib95 ]))
       ];
     };

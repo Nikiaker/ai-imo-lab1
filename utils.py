@@ -1,6 +1,15 @@
 import tsplib95
 import math
 import numpy as np
+import matplotlib.pyplot as plt
+
+from typing import Callable
+
+def convert_tsp_to_array(tsp_coords: tsplib95.fields.IndexedCoordinatesField, size: int) -> np.ndarray:
+    list_coords = []
+    for i in range(1, size + 1):
+        list_coords.append(tsp_coords[i])
+    return np.array(list_coords)
 
 def load_from_tsp(path):
     problem = tsplib95.load(path)
@@ -18,12 +27,16 @@ def load_from_tsp(path):
                 distance = math.hypot(x1 - x2, y1 - y2)
                 distance_matrix[i - 1, j - 1] = round(distance)
 
-    return distance_matrix
+    coords_matrix = convert_tsp_to_array(coords, n)
 
-def experiment(matrix, algorithm, runs=100):
+    return distance_matrix, coords_matrix
+
+def experiment(matrix: np.ndarray, algorithm: Callable[[np.ndarray], tuple[list[int], list[int]]], runs=100):
     total_costs = []
     min_cost = float('inf')
     max_cost = float('-inf')
+    best_cycle1 = []
+    best_cycle2 = []
 
     for i in range(runs):
         cycle1, cycle2 = algorithm(matrix)
@@ -34,14 +47,17 @@ def experiment(matrix, algorithm, runs=100):
 
         if total < min_cost:
             min_cost = total
+            best_cycle1 = cycle1
+            best_cycle2 = cycle2
         if total > max_cost:
             max_cost = total
 
     avg_cost = sum(total_costs) / runs
-    return avg_cost, min_cost, max_cost
+    return avg_cost, min_cost, max_cost, best_cycle1, best_cycle2
 
-def run_test(algorithm_name: str, distance_matrix: np.ndarray, algorithm):
-    avg_alg, min_alg, max_alg = experiment(distance_matrix, algorithm)
+def run_test(algorithm_name: str, distance_matrix: np.ndarray, positions: np.ndarray, algorithm: Callable[[np.ndarray], tuple[list[int], list[int]]], visualize: bool = False):
+    avg_alg, min_alg, max_alg, best_cycle1, best_cycle2 = experiment(distance_matrix, algorithm)
+    if visualize: visualize_cycles(best_cycle1, best_cycle2, positions)
     print(f"{algorithm_name} - Średnia: {avg_alg:.2f}, Min: {min_alg}, Max: {max_alg}")
 
 def cycle_length(cycle, matrix):
@@ -91,3 +107,19 @@ def calculate_regret(distance_matrix: np.ndarray, cycle: list[int], candidate: i
 def insert_into_cycle(distance_matrix: np.ndarray, cycle: list[int], candidate: int) -> None:
     _, _, pos = calculate_regret(distance_matrix, cycle, candidate)
     cycle.insert(pos, candidate)
+
+def visualize_cycles(cycle1: list[int], cycle2: list[int], positions: np.ndarray) -> None:
+    plt.figure(figsize=(8, 8))
+    
+    def plot_cycle(cycle, color):
+        x = [positions[i, 0] for i in cycle] + [positions[cycle[0], 0]]
+        y = [positions[i, 1] for i in cycle] + [positions[cycle[0], 1]]
+        plt.plot(x, y, marker='o', color=color, linestyle='-')
+    
+    plot_cycle(cycle1, 'blue')
+    plot_cycle(cycle2, 'red')
+    
+    plt.xlabel("X coordinate")
+    plt.ylabel("Y coordinate")
+    plt.title("Visualization of Two Cycles")
+    plt.show()
