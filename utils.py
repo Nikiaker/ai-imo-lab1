@@ -57,7 +57,7 @@ def experiment(matrix: np.ndarray, algorithm: Callable[[np.ndarray], tuple[list[
 
 def run_test(algorithm_name: str, distance_matrix: np.ndarray, positions: np.ndarray, algorithm: Callable[[np.ndarray], tuple[list[int], list[int]]], visualize: bool = False):
     avg_alg, min_alg, max_alg, best_cycle1, best_cycle2 = experiment(distance_matrix, algorithm)
-    if visualize: visualize_cycles(best_cycle1, best_cycle2, positions)
+    visualize_cycles(best_cycle1, best_cycle2, positions, algorithm_name, avg_alg, min_alg, max_alg, not visualize)
     print(f"{algorithm_name} - Średnia: {avg_alg:.2f}, Min: {min_alg}, Max: {max_alg}")
 
 def cycle_length(cycle, matrix):
@@ -104,12 +104,12 @@ def calculate_regret(distance_matrix: np.ndarray, cycle: list[int], candidate: i
     regret = second_best_increase - best_increase
     return regret, best_increase, best_pos
 
-def insert_into_cycle(distance_matrix: np.ndarray, cycle: list[int], candidate: int) -> None:
+def insert_into_cycle(distance_matrix: np.ndarray, cycle: list[int], candidate: int):
     _, _, pos = calculate_regret(distance_matrix, cycle, candidate)
     cycle.insert(pos, candidate)
 
-def visualize_cycles(cycle1: list[int], cycle2: list[int], positions: np.ndarray) -> None:
-    plt.figure(figsize=(8, 8))
+def visualize_cycles(cycle1: list[int], cycle2: list[int], positions: np.ndarray, algorithm_name: str, avg_alg: float, min_alg: float, max_alg: float, save = False):
+    plt.figure(figsize=(16, 9))
     
     def plot_cycle(cycle, color):
         x = [positions[i, 0] for i in cycle] + [positions[cycle[0], 0]]
@@ -119,7 +119,13 @@ def visualize_cycles(cycle1: list[int], cycle2: list[int], positions: np.ndarray
     plot_cycle(cycle1, 'blue')
     plot_cycle(cycle2, 'red')
     
-    plt.xlabel("X coordinate")
-    plt.ylabel("Y coordinate")
-    plt.title("Visualization of Two Cycles")
-    plt.show()
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.title(f"{algorithm_name} - Średnia: {avg_alg:.2f}, Min: {min_alg}, Max: {max_alg}")
+    
+    if save:
+        plt.savefig(f"visualizations/{algorithm_name}.png")
+    else:
+        plt.show()
+    
+    plt.close()
